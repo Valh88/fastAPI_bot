@@ -1,92 +1,78 @@
 import copy
-
 import fastapi
-import uvicorn
-
-import database
-from pydentic_models import User
+# import uvicorn
+import pydentic_models
+from database import crud
 import config
 
 api = fastapi.FastAPI()
 
 
-# uvicorn app:api --reload
-
-
-
-fake_database = {'users':[
-    {
-        "id":1,
-        "name":"Anna",
-        "nick":"Anny42",
-        "balance": 15300
-     },
-
-    {
-        "id":2,
-        "name":"Dima",
-        "nick":"dimon2319",
-        "balance": 160.23
-     },
-    {
-        "id":3,
-        "name":"Vladimir",
-        "nick":"Vova777",
-        "balance": 200.1
-     }
-    ], }
-
 @api.put('/user/{user_id}')
-def update_user(user_id: int, user: User = fastapi.Body()): # используя fastapi.Body() мы явно указываем, что отправляем информацию в теле запроса
-    for index, u in enumerate(fake_database['users']): # так как в нашей бд юзеры хранятся в списке, нам нужно найти их индексы внутри этого списка
-        if u['id'] == user_id:
-            fake_database['users'][index] = user    # обновляем юзера в бд по соответствующему ему индексу из списка users
-            return user
+def update_user(user_id: int, user: pydentic_models.UserToUpdate = fastapi.Body()):
+    # fastapi.Body()  информацию в теле запроса
+    return crud.update_user(user).to_dict()
 
 
 @api.delete('/user/{user_id}')
-def delete_user(user_id: int = fastapi.Path()): # используя fastapi.Path() мы явно указываем, что переменную нужно брать из пути
-    for index, u in enumerate(fake_database['users']): # так как в нашей бд юзеры хранятся в списке, нам нужно найти их индексы внутри этого списка
-        if u['id'] == user_id:
-            old_db = copy.deepcopy(fake_database) # делаем полную копию объекта в переменную old_db, чтобы было с чем сравнить
-            del fake_database['users'][index]    # удаляем юзера из бд
-            return {'old_db' : old_db,
-                    'new_db': fake_database}
+@crud.db_session
+def delete_user(user_id: int = fastapi.Path()): # fastapi.Path() переменную нужно брать из пути
+    crud.get_user_by_id(user_id).delete()
+    return True
 
 
 @api.post('/user/create')
-def index(user: User):
-    fake_database['users'].append(user)
-    return {'User Created!': user}
+def create_user(user: pydentic_models.UserToCreate):
+    return crud.create_user(tg_id=user.tg_ID,
+                            nick=user.nick if user.nick else None).to_dict()
 
 
-@api.get('/get_info_by_user_id/{id:int}')
-def get_info_about_user(id):
-    return fake_database['users'][id-1]
+@api.get('/get_info_by_user_id/{user_id:int}')
+@crud.db_session
+def get_info_about_user(user_id):
+    return crud.get_user_info(crud.User[user_id])
 
 
-@api.get('/get_user_balance_by_id/{id:int}')
-def get_info_about_user(id):
-    return fake_database['users'][id-1]['balance']
+@api.get('/get_user_balance_by_id/{user_id:int}')
+@crud.db_session
+def get_user_balance_by_id(user_id):
+    crud.update_wallet_balance(crud.User[user_id].wallet)
+    return crud.User[user_id].wallet.balance
 
 
 @api.get('/get_total_balance')
-def get_info_about_user():
-    total_balance: float = 0.0
-    for user in fake_database['users']:
-        total_balance += User(**user).balance
-    return total_balance
+@crud.db_session
+def get_total_balance():
+    """
+    общий баланс юзеров в базе
+    :return:
+    """
+    balance = 0.0
+    crud.update_all_wallets()
+    for user in crud.User.select()[:]:
+        balance += user.wallet.balance
+    return balance
 
 
-@api.get("/users/")
-def get_users(skip: int = 0, limit: int = 10):
-    return fake_database['users'][skip: skip + limit]
+@api.get("/users")
+@crud.db_session
+def get_users():
+    users = []
+    for user in crud.User.select()[:]:
+        users.append(user.to_dict())
+    return users
 
 
-@api.get("/user/{user_id}")
-def read_user(user_id: str, query: str | None = None):
-    if query:
-        return {"item_id": user_id, "query": query}
-    return {"item_id": user_id}
+@api.get("/user_by_tg_id/{tg_id:int}")
+@crud.db_session
+def get_user_by_tg_id(tg_id):
+    """
+    Получаем юзера по айди его ТГ
+    :param tg_id:
+    :return:
+    """
+    return crud.get_user_info(crud.get_user_by_tg_id(tg_id))
+
+# uvicorn app:api --reload
 # if __name__ == "__main__":
 #     uvicorn.run("app:api", host="0.0.0.0", port=8000, reload=True)
