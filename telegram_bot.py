@@ -234,4 +234,8 @@ if __name__ == '__main__':
     # запускаем бота этой командой:
     # bot.infinity_polling()
     # bot.remove_webhook()
-    bot.polling(none_stop=True)
+    while True:
+        try:
+            bot.infinity_polling()
+        except:
+            continue

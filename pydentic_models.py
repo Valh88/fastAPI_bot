@@ -50,10 +50,39 @@ class UserToCreate(BaseModel):
     tg_ID:  int = None
     nick:   str = None
 
+    @validator('nick')
+    def check_nick(cls, nick):
+        if nick.isalpha():
+            return nick
+        else:
+            raise ValueError('Ник должен состоять из букв')
+
 
 class CreateTransaction(BaseModel):
     receiver_address: str
     amount_btc_without_fee: float
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+
+class Admin(BaseModel):
+    username: str
+
+
+class UserInDB(Admin):
+    hashed_password: str
+
+
 UserToUpdate.update_forward_refs()
+User.update_forward_refs()
+UserToCreate.update_forward_refs()
+Transaction.update_forward_refs()
+CreateTransaction.update_forward_refs()
+Wallet.update_forward_refs()

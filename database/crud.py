@@ -3,9 +3,11 @@ import config
 import pydentic_models
 import bit
 from database.db import *
+from config import logger
 
 
 @db_session
+@logger.catch
 def create_wallet(user: pydentic_models.User = None, private_key: str = None, testnet: bool = True):
     """
     создаем кошелек
@@ -28,6 +30,7 @@ def create_wallet(user: pydentic_models.User = None, private_key: str = None, te
 
 
 @db_session
+@logger.catch
 def create_user(tg_id: int, nick: str = None):
     """
     делаем юзера
@@ -44,6 +47,7 @@ def create_user(tg_id: int, nick: str = None):
 
 
 @db_session
+@logger.catch
 def create_transaction(
         sender: pydentic_models.User,
         amount_btc_without_fee: float,
@@ -92,6 +96,7 @@ def create_transaction(
 
 
 @db_session
+@logger.catch
 def update_wallet_balance(wallet: pydentic_models.Wallet):
     # проверяем в не в тестовой сети ли мы
     testnet = False if not wallet.private_key.startswith('c') else True
@@ -103,6 +108,7 @@ def update_wallet_balance(wallet: pydentic_models.Wallet):
 
 
 @db_session
+@logger.catch
 def update_all_wallets():
     # с помощью генераторного выражения выбираем все кошельки, с помощью функции select()
     for wallet in select(w for w in Wallet)[:]:
@@ -113,6 +119,7 @@ def update_all_wallets():
 
 
 @db_session
+@logger.catch
 def get_user_by_id(id: int):
     """
     юзер по айди
@@ -123,6 +130,7 @@ def get_user_by_id(id: int):
 
 
 @db_session
+@logger.catch
 def get_user_by_tg_id(tg_id: int):
     """
     юзер по телеграм айди
@@ -134,6 +142,7 @@ def get_user_by_tg_id(tg_id: int):
 
 
 @db_session
+@logger.catch
 def get_transaction_info(transaction: pydentic_models.Transaction):
     """
     инфо о транзакции
@@ -155,6 +164,7 @@ def get_transaction_info(transaction: pydentic_models.Transaction):
 
 
 @db_session
+@logger.catch
 def get_wallet_info(wallet: pydentic_models.Wallet):
     """
     инфо о кошельке
@@ -172,6 +182,7 @@ def get_wallet_info(wallet: pydentic_models.Wallet):
 
 
 @db_session
+@logger.catch
 def get_user_info(user: pydentic_models.User):
     """
     иноф о юзере
@@ -190,6 +201,7 @@ def get_user_info(user: pydentic_models.User):
 
 
 @db_session
+@logger.catch
 def update_user(user: pydentic_models.UserToUpdate):
     """
     обновить инфо о юзере
@@ -214,3 +226,9 @@ def get_user_transactions(user_id: int):
     transactions_d = list()
     [transactions_d.append(trans.to_dict()) for trans in transactions]
     return transactions_d
+
+
+def get_user_no_nick():
+    users = User.select(lambda u: u.nick != '')
+    print(len(users))
+
