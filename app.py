@@ -73,6 +73,29 @@ def get_user_by_tg_id(tg_id):
     """
     return crud.get_user_info(crud.get_user_by_tg_id(tg_id))
 
+
+@api.post("/create_transaction/{tg_id:int}")
+@crud.db_session
+def create_transaction(tg_id: int, transaction: pydentic_models.CreateTransaction = fastapi.Body()):
+    user = crud.get_user_by_tg_id(tg_id)
+    transaction = crud.create_transaction(sender=user,
+                                          amount_btc_without_fee=transaction.amount_btc_without_fee,
+                                          receiver_address=transaction.receiver_address)
+
+    return crud.get_transaction_info(transaction)
+
+
+@api.get("/get_user_wallet/{user_id:int}")
+@crud.db_session
+def get_user_wallet(user_id):
+    return crud.get_wallet_info(crud.User[user_id].wallet)
+
+
+@api.get("/get_user_transactions/{user_id:int}")
+@crud.db_session
+def get_user_transactions(user_id: int):
+    return crud.get_user_transactions(user_id)
+
 # uvicorn app:api --reload
 # if __name__ == "__main__":
 #     uvicorn.run("app:api", host="0.0.0.0", port=8000, reload=True)

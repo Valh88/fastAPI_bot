@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, ValidationError
+from pydantic import BaseModel, validator, ValidationError, root_validator
 from datetime import datetime
 from typing import List, Optional
 
@@ -50,3 +50,10 @@ class UserToCreate(BaseModel):
     tg_ID:  int = None
     nick:   str = None
 
+
+class CreateTransaction(BaseModel):
+    receiver_address: str
+    amount_btc_without_fee: float
+
+
+UserToUpdate.update_forward_refs()

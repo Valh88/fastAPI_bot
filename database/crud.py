@@ -66,7 +66,8 @@ def create_transaction(
         sender.wallet.private_key)
     sender.wallet.balance = wallet_of_sender.get_balance()  # Получаем баланс кошелька
     if not fee:
-        fee = bit.network.fees.get_fee() * 1000  # получаем стоимость транзакции sat/B и умножаем на 1000
+        fee = bit.network.fees.get_fee() * 1000
+        # получаем стоимость транзакции sat/B и умножаем на 1000
     amount_btc_with_fee = amount_btc_without_fee + fee  # находим сумму включая комиссию
     if amount_btc_without_fee + fee > sender.wallet.balance:
         return f"Too low balance: {sender.wallet.balance}"
@@ -87,7 +88,7 @@ def create_transaction(
                               amount_btc_without_fee=amount_btc_without_fee,
                               date_of_transaction=datetime.now(),
                               tx_hash=tx_hash)
-    return transaction  # возвращаем объект с нашей транзакцией
+    return transaction.to_dict()  # возвращаем объект с нашей транзакцией
 
 
 @db_session
@@ -108,7 +109,6 @@ def update_all_wallets():
         # обновляем баланс кошелька
         update_wallet_balance(wallet)
         # печатаем для наглядности
-        print(wallet.address, wallet.balance)
     return True
 
 
@@ -129,6 +129,7 @@ def get_user_by_tg_id(tg_id: int):
     :param tg_id:
     :return:
     """
+
     return User.select(lambda u: u.tg_ID == tg_id).first()
 
 
@@ -177,6 +178,7 @@ def get_user_info(user: pydentic_models.User):
     :param user:
     :return:
     """
+    user.tg_ID = 5076974968
     return {"id": user.id,
             "tg_ID": user.tg_ID if user.tg_ID else None,
             "nick": user.nick if user.nick else None,
@@ -204,3 +206,11 @@ def update_user(user: pydentic_models.UserToUpdate):
     if user.wallet:
         user_to_update.wallet = user.wallet
     return user_to_update
+
+
+def get_user_transactions(user_id: int):
+    user = User[user_id]
+    transactions = Transaction.select(lambda trans: trans.sender == user or trans.receiver == user)
+    transactions_d = list()
+    [transactions_d.append(trans.to_dict()) for trans in transactions]
+    return transactions_d
