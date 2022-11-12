@@ -133,6 +133,7 @@ def get_info_about_user(user_id, current_user: Admin = Depends(get_current_user)
     :param user_id:
     :return:
     """
+    print(current_user)
     return crud.get_user_info(crud.User[user_id])
 
 

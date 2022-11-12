@@ -22,6 +22,3 @@ username2 = 'user'
 password2 = '$2b$12$TaXjJ.AEaPo5zE2ySkXXnO9mvk7weyyk3Dc1CxjccB6nW05WhWhHe'
 
 logger.add('logs.log', level='DEBUG', rotation='100 MB', compression='zip')
-logger.debug('Error')
-logger.info('Information message')
-logger.warning('Warning')
